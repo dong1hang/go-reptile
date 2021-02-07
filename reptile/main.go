@@ -1,181 +1,257 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
-	"math/rand"
 	"net/http"
+	"net/http/cookiejar"
 	"net/url"
 	"os"
 	"strings"
-	"time"
+
+	"github.com/PuerkitoBio/goquery"
+	"golang.org/x/text/encoding/simplifiedchinese"
+	"golang.org/x/text/transform"
 )
 
-//"github.com/PuerkitoBio/goquery"
-// func main1() {
-// 	html := `<htm
-// 	l>
-// 	        <body>
-// 	            <h1 id="title">春晓</h1>
-// 	            <p class="content1">
-// 	            春眠不觉晓，
-// 	            处处闻啼鸟。
-// 	            夜来风雨声，
-// 	            花落知多少。
-// 	            </p>
-// 	        </body>
-// 	        </html>
-// 	        `
-// 	dom, err := goquery.NewDocumentFromReader(strings.NewReader(html))
-// 	if err != nil {
-// 		log.Fatalln(err)
-// 	}
+var client *http.Client
+var cookies []*http.Cookie
 
-// 	dom.Find("p").Each(func(i int, selection *goquery.Selection) {
-// 		fmt.Println(selection.Text())
-// 	})
-// }
+const (
+	xiaoyaoUrl string = "https://xiaoyaojp.com/"
+)
 
 func main() {
 
-	fmt.Println("Start......")
+	login()
 
-	//fmt.Println(getUrlRespHtml())
-	fmt.Println("Start......")
+}
 
-	//var cookieJar, _ = browsercookie.Chrome("https://account.geekbang.org")
-	//cookieJar, _ := cookiejar.New(nil)
-	values := url.Values{}
+func login() {
 
-	var cookie string = "UM_distinctid=17775548d0b789-0014634a9a91f5-13e3563-1fa400-17775548d0c29; CNZZDATA1275248188=1848093610-1612577998-|1612577998; _ga=GA1.2.1380242526.1612581211; _gid=GA1.2.698374539.1612581211; haspost_11530=9; xdD4_2132_lastvisit=1612579053; xdD4_2132_sendmail=1; xdD4_2132_saltkey=aTHBQ31b; xdD4_2132_noticeTitle=1; xdD4_2132_st_t=0|1612582655|4618301a37ec4ccfd76cfa1d0c5cfd47; xdD4_2132_sid=V5g7jk; xdD4_2132_lastact=1612582780	member.php	logging; xdD4_2132_ulastactivity=2747yDTA6jTNBsQtxRnYcShQj0DgLb8U5hpmfOvpP2wGc6CMjr+L; xdD4_2132_lastcheckfeed=11530|1612582780; xdD4_2132_checkfollow=1; xdD4_2132_lip=126.51.91.20,1612582676; xdD4_2132_auth=d8a6ExNZJLw9lhUJtQ+S9n+PilaULrZ/aP+MD4mthNmJ65hK6JSnRuoKqobscTnZNrfypoPxFuLuNh2dAc3jAIGvQA; xdD4_2132_tshuz_accountlogin=11530"
+	//获取登陆界面的cookie
+	postURL := "https://xiaoyaojp.com/member.php?mod=logging&action=login&loginsubmit=yes&frommessage&loginhash=LjSeu&inajax=1"
+	var username string = "dong1hang"
+	var password string = "331801363"
+	req, _ := http.NewRequest("GET", "https://xiaoyaojp.com/forum-130-1.html", nil)
+	client = &http.Client{}
+	res, _ := client.Do(req)
 
-	req, err := http.NewRequest("GET", "https://xiaoyaojp.com/forum-130-1.html", strings.NewReader(values.Encode()))
-	if err != nil {
-		panic(err)
+	var tempCookies = res.Cookies()
+	for _, v := range res.Cookies() {
+		req.AddCookie(v)
 	}
-	req.Header.Set("Cookie", cookie)
-	//req.Header.Add("Agent", GetRandomUserAgent())
 
-	//模拟
-	req.Header.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.104 Safari/537.36)")
-	req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9")
+	Jar, _ := cookiejar.New(nil)
+	postURLJSON, _ := url.Parse(postURL)
+	Jar.SetCookies(postURLJSON, tempCookies)
+	client.Jar = Jar
 
-	//req.Header.Set("Accept-Encoding", "gzip, deflate, br")
-	req.Header.Set("Cache-Control", "max-age=0")
-	//req.Header.Set("Origin","http://center.qianlima.com")
-	req.Header.Set("Accept-Language", "ja,zh-CN;q=0.9,zh;q=0.8,en-US;q=0.7,en;q=0.6")
-	//	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.104 Safari/537.36")
-	//req.Header.Set("Host","center.qianlima.com")
-	// req.Header.Set("Connection","keep-alive")
-	//req.Header.Set("Upgrade-Insecure-Requests","1")
-	//req.Header.Set("Content-Type","application/x-www-form-urlencoded")
-	req.Header.Set("remoteAddress", "192.254.222.138:443")
+	var resp *http.Response
+	req, err := http.NewRequest("POST", postURL, strings.NewReader("username="+username+"&password="+password+"&referer=https://xiaoyaojp.com/forum-130-1.html&questionid=0&formhash=4efa916d&answer="))
 
-	client := &http.Client{}
-	res, err := client.Do(req)
-	// Request the HTML page.
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	defer res.Body.Close()
-	if res.StatusCode != 200 {
-		log.Fatalf("status code error: %d %s", res.StatusCode, res.Status)
-	}
+	req.Header.Set("Host", "xiaoyaojp.com")
+	req.Header.Set("Connection", "keep-alive")
+	req.Header.Set("Content-Length", "131")
+	req.Header.Set("Cache-Control", "max-age=0")
+	req.Header.Set("Upgrade-Insecure-Requests", "1")
+	req.Header.Set("Origin", "https://xiaoyaojp.com")
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("Host", "xiaoyaojp.com")
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.104 Safari/537.36")
+	req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9")
+	req.Header.Set("Accept-Encoding", "gzip, deflate, br")
+	req.Header.Set("Referer", "https://xiaoyaojp.com/forum-130-1.html")
+	req.Header.Set("Accept-Language", "ja,zh-CN;q=0.9,zh;q=0.8,en-US;q=0.7,en;q=0.6")
+	req.Header.Set("Sec-Fetch-Site", "same-origin")
+	req.Header.Set("Sec-Fetch-Mode", "navigate")
+	req.Header.Set("Sec-Fetch-User", "?1")
+	req.Header.Set("Sec-Fetch-Dest", "iframe")
+	req.Header.Set("Cookie", "UM_distinctid=17775548d0b789-0014634a9a91f5-13e3563-1fa400-17775548d0c29; _ga=GA1.2.1380242526.1612581211; _gid=GA1.2.698374539.1612581211; haspost_11530=9; CNZZDATA1275248188=1848093610-1612577998-%7C1612611522; xdD4_2132_sid=Eeo9d5; xdD4_2132_lastvisit=1612608945; _gat=1; xdD4_2132_sendmail=1; xdD4_2132_noticeTitle=1; xdD4_2132_saltkey=onD76Cjk; xdD4_2132_st_t=0%7C1612612547%7C78a2ca1b9e83cf5439809cda99ce0fb9; xdD4_2132_lastact=1612612548%09member.php%09logging")
 
-	body, err := ioutil.ReadAll(res.Body)
+	resp, err = client.Do(req)
+
+	if resp != nil && resp.Body != nil {
+		defer resp.Body.Close()
+	} else {
+		fmt.Println("ERROR  返回为空 ")
+	}
+	if resp == nil || resp.Body == nil || err != nil {
+		log.Fatal(err)
+	}
+	cookies = res.Cookies()
+	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println(string(body))
 
-	// //load the HTML document
-	// doc, err := goquery.NewDocumentFromReader(res.Body)
-	// fmt.Println(res.Body)
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
+	// 获取一览下的body
+	doc := getResultHtml("https://xiaoyaojp.com/forum-130-1.html")
+	//在桌面创建文件夹
+	ioserr := os.Mkdir("C:/Users/Administrator/Desktop/xiaoyaoImgs", os.ModePerm)
+	if ioserr != nil {
+		fmt.Println(err)
+	}
+	//find the review items
+	//循环店铺
+	doc.Find("div.fl_icn_g").EachWithBreak(func(i int, s *goquery.Selection) bool {
+		a := s.Next().Find("a").First()
+		a_href, _ := a.Attr("href")
+		a_html, _ := a.Html()
 
-	// //find the review items
-	// doc.Find("div#card_container > div.grid_item").EachWithBreak(func(i int, s *goquery.Selection) bool {
-	// 	a := s.Find("a").First()
-	// 	a_href, _ := a.Attr("href")
-	// 	img := s.Find("img").First()
-	// 	img_alt, _ := img.Attr("alt")
-	// 	img_src, _ := img.Attr("src")
-	// 	img_src = img_src[:strings.Index(img_src, "?")]
-	// 	img_url, err := url.Parse(img_src)
-	// 	if err != nil {
-	// 		log.Fatal(err)
-	// 	}
-	// 	fmt.Println("------------------------------------")
-	// 	fmt.Printf("[%s]\n", img_alt)
-	// 	dl_filename := img_url.Path[strings.LastIndex(img_url.Path, "/")+1:]
-	// 	DownloadFile(img_src, "C:\\Users\\Administrator\\Desktop\\imgs"+dl_filename)
-	// 	fmt.Println(img_alt, a_href, img_src)
+		fmt.Println("------------------------------------")
+		fmt.Printf("[%s]\n", a_href)
+		fmt.Println(a_html)
 
-	// 	//load detail page
+		shopsUrl := getResultHtml(xiaoyaoUrl + a_href)
 
-	// 	//detail_url := "https://royaleapi.com" + a_href
-	// 	//loadDetailPage(detail_url)
-	// 	return true
+		//根据店面创建文件夹
+		err := os.Mkdir("C:/Users/Administrator/Desktop/xiaoyaoImgs/"+a_html, os.ModePerm)
+		if err != nil {
+			fmt.Println(err)
+		}
+		// 循环每个帖子并找到下个页面的链接
+		shopsUrl.Find("div.deanflists").EachWithBreak(func(i int, gs *goquery.Selection) bool {
+			theSencodA := gs.Find("a").Eq(2)
+			title, _ := theSencodA.Attr("title")
+			fmt.Println("----------------theSencodA-------------------")
+			fmt.Printf("[%s]\n", title)
+			if "隐藏置顶帖" != title {
+				a := gs.Find("a").First()
+				a_html1, _ := a.Html()
+				if "樱花岛美女" == a_html1 {
+					a = gs.Find("a").Eq(1)
+					a_html1, _ = a.Html()
+				}
+				a_href, _ := a.Attr("href")
+				if strings.ContainsAny(a_html1, "/") {
+					s := strings.Split(a_html1, "/")
 
-	// })
+					for _, str := range s {
+						a_html1 = str
+					}
+				}
+				fmt.Printf("[%s]\n", a_html1)
+				shopsUrl1 := getResultHtml(xiaoyaoUrl + a_href)
+				err := os.Mkdir("C:/Users/Administrator/Desktop/xiaoyaoImgs/"+a_html+"/"+a_html1, os.ModePerm)
+				if err != nil {
+					fmt.Println(err)
 
+				}
+
+				shopsUrl1.Find("ignore_js_op").EachWithBreak(func(i int, gks *goquery.Selection) bool {
+					img := gks.Find("img").First()
+					text, _ := img.Attr("zoomfile")
+					//imgUrl, _ := img.Attr("src")
+
+					fmt.Println("----------------imgUrl-------------------")
+					fmt.Println(img)
+					fmt.Printf("[%s]\n", text)
+					s := strings.Split(text, "/")
+					str := s[len(s)-1]
+					if len(text) != 0 {
+
+						DownloadFile(xiaoyaoUrl+text, "C:/Users/Administrator/Desktop/xiaoyaoImgs/"+a_html+"/"+a_html1+"/"+str)
+					}
+					return true
+				})
+
+			} else {
+				fmt.Printf("[%s]\n", title)
+			}
+
+			return true
+
+		})
+
+		return true
+	})
 }
 
-// getUrlRespHtml 获取网站信息
-// return string body
-func getUrlRespHtml() string {
-	url := "https://xiaoyaojp.com/forum-130-1.html"
-	var cookie string = "UM_distinctid=17775548d0b789-0014634a9a91f5-13e3563-1fa400-17775548d0c29; CNZZDATA1275248188=1848093610-1612577998-|1612577998; _ga=GA1.2.1380242526.1612581211; _gid=GA1.2.698374539.1612581211; haspost_11530=9; xdD4_2132_lastvisit=1612579053; xdD4_2132_sendmail=1; xdD4_2132_saltkey=aTHBQ31b; xdD4_2132_noticeTitle=1; xdD4_2132_st_t=0|1612582655|4618301a37ec4ccfd76cfa1d0c5cfd47; xdD4_2132_sid=V5g7jk; xdD4_2132_lastact=1612582780	member.php	logging; xdD4_2132_ulastactivity=2747yDTA6jTNBsQtxRnYcShQj0DgLb8U5hpmfOvpP2wGc6CMjr+L; xdD4_2132_lastcheckfeed=11530|1612582780; xdD4_2132_checkfollow=1; xdD4_2132_lip=126.51.91.20,1612582676; xdD4_2132_auth=d8a6ExNZJLw9lhUJtQ+S9n+PilaULrZ/aP+MD4mthNmJ65hK6JSnRuoKqobscTnZNrfypoPxFuLuNh2dAc3jAIGvQA; xdD4_2132_tshuz_accountlogin=11530"
-	client := &http.Client{}
-	req, err := http.NewRequest("GET", url, nil)
+func gbk2utf8(str []byte) ([]byte, error) {
+	return ioutil.ReadAll(transform.NewReader(bytes.NewReader(str), simplifiedchinese.GBK.NewDecoder()))
+}
+
+// getResultHtml 获取url下的body
+//return *goquery.Document
+func getResultHtml(get_url string) *goquery.Document {
+
+	values := url.Values{}
+	// TODO  ?_dsign 这个参数随机的值不知道怎么获取
+	//req1, err := http.NewRequest("GET", get_url+"?_dsign=9aaf12bf", strings.NewReader(values.Encode()))
+	req1, err := http.NewRequest("GET", get_url, strings.NewReader(values.Encode()))
 	if err != nil {
-		fmt.Println("获取地址错误")
-	}
-	req.Header.Set("Cookie", cookie)
-	req.Header.Add("Agent", GetRandomUserAgent())
-	resp, err := client.Do(req)
-	if err != nil {
-		fmt.Println("登录错误")
+		panic(err)
 	}
 
-	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
+	req1.Header.Set("Cookie", "UM_distinctid=17775548d0b789-0014634a9a91f5-13e3563-1fa400-17775548d0c29; _ga=GA1.2.1380242526.1612581211; _gid=GA1.2.698374539.1612581211; haspost_11530=9; CNZZDATA1275248188=1848093610-1612577998-%7C1612611522; xdD4_2132_sid=Eeo9d5; xdD4_2132_lastvisit=1612608945; _gat=1; xdD4_2132_sendmail=1; xdD4_2132_noticeTitle=1; xdD4_2132_saltkey=onD76Cjk; xdD4_2132_st_t=0%7C1612612547%7C78a2ca1b9e83cf5439809cda99ce0fb9; xdD4_2132_lastact=1612612548%09member.php%09logging")
+
+	res1, err := client.Do(req1)
+	// Request the HTML page.
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	return string(body)
+	defer res1.Body.Close()
+	if res1.StatusCode != 200 {
+		log.Fatalf("status code error: %d %s", res1.StatusCode, res1.Status)
+	}
+
+	doc, err := goquery.NewDocumentFromReader(res1.Body)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	printResultHtml(get_url)
+
+	return doc
 
 }
 
-// GetRandomUserAgent 模拟用户
-// return 随机
-func GetRandomUserAgent() string {
+// debug用 打印body
+func printResultHtml(get_url string) {
 
-	var userAgentList = []string{"Mozilla/5.0 (compatible, MSIE 10.0, Windows NT, DigExt)",
-		"Mozilla/4.0 (compatible, MSIE 7.0, Windows NT 5.1, 360SE)",
-		"Mozilla/4.0 (compatible, MSIE 8.0, Windows NT 6.0, Trident/4.0)",
-		"Mozilla/5.0 (compatible, MSIE 9.0, Windows NT 6.1, Trident/5.0,",
-		"Opera/9.80 (Windows NT 6.1, U, en) Presto/2.8.131 Version/11.11",
-		"Mozilla/4.0 (compatible, MSIE 7.0, Windows NT 5.1, TencentTraveler 4.0)",
-		"Mozilla/5.0 (Windows, U, Windows NT 6.1, en-us) AppleWebKit/534.50 (KHTML, like Gecko) Version/5.1 Safari/534.50",
-		"Mozilla/5.0 (Macintosh, Intel Mac OS X 10_7_0) AppleWebKit/535.11 (KHTML, like Gecko) Chrome/17.0.963.56 Safari/535.11",
-		"Mozilla/5.0 (Macintosh, U, Intel Mac OS X 10_6_8, en-us) AppleWebKit/534.50 (KHTML, like Gecko) Version/5.1 Safari/534.50",
-		"Mozilla/5.0 (Linux, U, Android 3.0, en-us, Xoom Build/HRI39) AppleWebKit/534.13 (KHTML, like Gecko) Version/4.0 Safari/534.13",
-		"Mozilla/5.0 (iPad, U, CPU OS 4_3_3 like Mac OS X, en-us) AppleWebKit/533.17.9 (KHTML, like Gecko) Version/5.0.2 Mobile/8J2 Safari/6533.18.5",
-		"Mozilla/4.0 (compatible, MSIE 7.0, Windows NT 5.1, Trident/4.0, SE 2.X MetaSr 1.0, SE 2.X MetaSr 1.0, .NET CLR 2.0.50727, SE 2.X MetaSr 1.0)",
-		"Mozilla/5.0 (iPhone, U, CPU iPhone OS 4_3_3 like Mac OS X, en-us) AppleWebKit/533.17.9 (KHTML, like Gecko) Version/5.0.2 Mobile/8J2 Safari/6533.18.5",
-		"MQQBrowser/26 Mozilla/5.0 (Linux, U, Android 2.3.7, zh-cn, MB200 Build/GRJ22, CyanogenMod-7) AppleWebKit/533.1 (KHTML, like Gecko) Version/4.0 Mobile Safari/533.1"}
+	values := url.Values{}
+	// TODO  ?_dsign 这个参数随机的值不知道怎么获取
+	//req1, err := http.NewRequest("GET", get_url+"?_dsign=9aaf12bf", strings.NewReader(values.Encode()))
+	req1, err := http.NewRequest("GET", get_url, strings.NewReader(values.Encode()))
+	if err != nil {
+		panic(err)
+	}
 
-	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	return userAgentList[r.Intn(len(userAgentList))]
+	req1.Header.Set("Cookie", "UM_distinctid=17775548d0b789-0014634a9a91f5-13e3563-1fa400-17775548d0c29; _ga=GA1.2.1380242526.1612581211; _gid=GA1.2.698374539.1612581211; haspost_11530=9; CNZZDATA1275248188=1848093610-1612577998-%7C1612611522; xdD4_2132_sid=Eeo9d5; xdD4_2132_lastvisit=1612608945; _gat=1; xdD4_2132_sendmail=1; xdD4_2132_noticeTitle=1; xdD4_2132_saltkey=onD76Cjk; xdD4_2132_st_t=0%7C1612612547%7C78a2ca1b9e83cf5439809cda99ce0fb9; xdD4_2132_lastact=1612612548%09member.php%09logging")
+
+	res1, err := client.Do(req1)
+	// Request the HTML page.
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	defer res1.Body.Close()
+	if res1.StatusCode != 200 {
+		log.Fatalf("status code error: %d %s", res1.StatusCode, res1.Status)
+	}
+
+	body := res1.Body
+	bodytest, err := ioutil.ReadAll(body)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(string(bodytest))
+
 }
 
+//DownloadFile 下载图片
+// return error
 func DownloadFile(url string, filepath string) error {
 	fmt.Println(url, "->", filepath)
 	//get the data
@@ -190,6 +266,7 @@ func DownloadFile(url string, filepath string) error {
 
 	if err != nil {
 		log.Fatal(err)
+		fmt.Println(filepath)
 	}
 	defer out.Close()
 	//write the body to file
