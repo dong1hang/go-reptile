@@ -17,12 +17,12 @@ Sec-Fetch-Dest: iframe
 Referer: https://xiaoyaojp.com/forum-130-1.html
 Accept-Encoding: gzip, deflate, br
 Accept-Language: ja,zh-CN;q=0.9,zh;q=0.8,en-US;q=0.7,en;q=0.6
-Cookie: UM_distinctid=17775548d0b789-0014634a9a91f5-13e3563-1fa400-17775548d0c29; _ga=GA1.2.1380242526.1612581211; _gid=GA1.2.698374539.1612581211; haspost_11530=9; CNZZDATA1275248188=1848093610-1612577998-%7C1612611522; xdD4_2132_sid=Eeo9d5; xdD4_2132_lastvisit=1612608945; _gat=1; xdD4_2132_sendmail=1; xdD4_2132_noticeTitle=1; xdD4_2132_saltkey=onD76Cjk; xdD4_2132_st_t=0%7C1612612547%7C78a2ca1b9e83cf5439809cda99ce0fb9; xdD4_2132_lastact=1612612548%09member.php%09logging
+Cookie: 
 
 
-username	dong1hang
+username	
 referer	https://xiaoyaojp.com/forum-130-1.html
 questionid	0
-password	331801363
+password	
 formhash	4efa916d
 answer	
