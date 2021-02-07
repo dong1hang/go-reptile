@@ -22,6 +22,9 @@ var cookies []*http.Cookie
 
 const (
 	xiaoyaoUrl string = "https://xiaoyaojp.com/"
+	cookie     string = ""
+	username   string = ""
+	password   string = ""
 )
 
 func main() {
@@ -34,8 +37,7 @@ func login() {
 
 	//获取登陆界面的cookie
 	postURL := "https://xiaoyaojp.com/member.php?mod=logging&action=login&loginsubmit=yes&frommessage&loginhash=LjSeu&inajax=1"
-	var username string = "dong1hang"
-	var password string = "331801363"
+
 	req, _ := http.NewRequest("GET", "https://xiaoyaojp.com/forum-130-1.html", nil)
 	client = &http.Client{}
 	res, _ := client.Do(req)
@@ -74,7 +76,7 @@ func login() {
 	req.Header.Set("Sec-Fetch-Mode", "navigate")
 	req.Header.Set("Sec-Fetch-User", "?1")
 	req.Header.Set("Sec-Fetch-Dest", "iframe")
-	req.Header.Set("Cookie", "UM_distinctid=17775548d0b789-0014634a9a91f5-13e3563-1fa400-17775548d0c29; _ga=GA1.2.1380242526.1612581211; _gid=GA1.2.698374539.1612581211; haspost_11530=9; CNZZDATA1275248188=1848093610-1612577998-%7C1612611522; xdD4_2132_sid=Eeo9d5; xdD4_2132_lastvisit=1612608945; _gat=1; xdD4_2132_sendmail=1; xdD4_2132_noticeTitle=1; xdD4_2132_saltkey=onD76Cjk; xdD4_2132_st_t=0%7C1612612547%7C78a2ca1b9e83cf5439809cda99ce0fb9; xdD4_2132_lastact=1612612548%09member.php%09logging")
+	req.Header.Set("Cookie", cookie)
 
 	resp, err = client.Do(req)
 
@@ -192,7 +194,7 @@ func getResultHtml(get_url string) *goquery.Document {
 		panic(err)
 	}
 
-	req1.Header.Set("Cookie", "UM_distinctid=17775548d0b789-0014634a9a91f5-13e3563-1fa400-17775548d0c29; _ga=GA1.2.1380242526.1612581211; _gid=GA1.2.698374539.1612581211; haspost_11530=9; CNZZDATA1275248188=1848093610-1612577998-%7C1612611522; xdD4_2132_sid=Eeo9d5; xdD4_2132_lastvisit=1612608945; _gat=1; xdD4_2132_sendmail=1; xdD4_2132_noticeTitle=1; xdD4_2132_saltkey=onD76Cjk; xdD4_2132_st_t=0%7C1612612547%7C78a2ca1b9e83cf5439809cda99ce0fb9; xdD4_2132_lastact=1612612548%09member.php%09logging")
+	req1.Header.Set("Cookie", cookie)
 
 	res1, err := client.Do(req1)
 	// Request the HTML page.
